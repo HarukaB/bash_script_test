@@ -6,7 +6,7 @@ function custom_rm() {
         if [[ $arg =~ ^- ]]; then
             rm_options+=("$arg")
         else
-            paths_to_delete+=("$(realpath "$arg")")
+            paths_to_delete+=("$(realpath -s "$arg")")
         fi
     done
 
