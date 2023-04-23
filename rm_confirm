@@ -1,0 +1,42 @@
+function custom_rm() {
+    rm_options=()
+    paths_to_delete=()
+
+    for arg in "${@}"; do
+        if [[ $arg =~ ^- ]]; then
+            rm_options+=("$arg")
+        else
+            paths_to_delete+=("$(realpath "$arg")")
+        fi
+    done
+
+    total_file_count=0
+    total_file_size=0
+
+    for path in "${paths_to_delete[@]}"; do
+        file_count=$(find "$path" -type f 2>/dev/null | wc -l)
+        file_size=$(find "$path" -type f -exec du -b {} + 2>/dev/null | awk '{total+=$1} END {print total}')
+        total_file_count=$((total_file_count + file_count))
+        total_file_size=$((total_file_size + file_size))
+    done
+
+    total_file_size_human=$(numfmt --to=iec --suffix=B --format="%.1f" "$total_file_size")
+
+    if [[ ${#paths_to_delete[@]} -gt 1 ]]; then
+        path_list=$(printf ",%s" "${paths_to_delete[@]}")
+        path_list=${path_list:1}
+        file_word="files"
+    else
+        path_list="${paths_to_delete[0]}"
+        file_word="file"
+    fi
+
+    read -p "rm: are you sure to remove $path_list? $total_file_count $file_word will be deleted($total_file_size_human) (y/n) " confirm
+    if [[ $confirm == "y" || $confirm == "Y" ]]; then
+        command rm "${rm_options[@]}" "${paths_to_delete[@]}"
+    else
+        echo "Operation canceled"
+    fi
+}
+
+alias rm=custom_rm
